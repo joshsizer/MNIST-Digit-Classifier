@@ -27,7 +27,7 @@ Y_train = np_utils.to_categorical(Y_train, 10)
 Y_test = np_utils.to_categorical(Y_test, 10)
 
 model = None
-current_model_path = "models/model1"
+current_model_path = "models/model2"
 
 try:
     model = keras.models.load_model(current_model_path)
@@ -48,7 +48,7 @@ except IOError:
                 optimizer="adam",
                 metrics=['accuracy'])
 
-model.fit(X_train, Y_train, batch_size=32, epochs=10, verbose=1)
+model.fit(X_train, Y_train, batch_size=32, epochs=100, validation_split=0.3,  verbose=1)
 
 model.save(current_model_path)
 
