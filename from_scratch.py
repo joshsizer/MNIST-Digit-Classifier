@@ -1,6 +1,16 @@
+"""
+Created on Sun April 25 2021
+
+Copyright (c) 2021 - Joshua Sizer
+
+This code is licensed under MIT license (see
+LICENSE for details)
+"""
+
 import pandas as pd
 import numpy as np
 import numpy.random as nprand
+nprand.seed(3321)
 import math
 
 def full_print(arr):
@@ -118,6 +128,19 @@ def initialize_layer_weights(n, m, init_type="xavier"):
 
     return scaled
 
+def shuffle_two(a, b):
+    """Shuffle two arrays in the same way so as to
+    keep them correctly aligned with each other.
+
+    For example:
+    shuffle_two([1, 2, 3], [3, 2, 1])
+    could produce [1, 3, 2], [3, 1, 2]
+    """
+    rnd_state = np.random.get_state()
+    np.random.shuffle(a)
+    np.random.set_state(rnd_state)
+    np.random.shuffle(b)
+
 # Load train.csv 
 df = pd.read_csv("data/train.csv")
 dfn = df.to_numpy()
@@ -148,9 +171,28 @@ l2_w = initialize_layer_weights(layers[1], layers[2], "nxavier")
 l1_b = np.zeros((layers[1], 1))
 l2_b = np.zeros((layers[2], 1))
 
+X_total = X_train
+Y_total = Y_train
+X_validate = None
+Y_validate = None
+
 # Do the learning
-mini_batch_size = 20
-for i in range(10):
+mini_batch_size = 32
+epochs = 10
+
+for i in range(epochs):
+    # Shuffle our dataset
+    shuffle_two(X_total, Y_total)
+
+    # Split our dataset into validation and train
+    # sets.
+    split_point = int(len(X_total) * 0.3)
+    
+    X_validate = X_total[0:split_point]
+    X_train = X_total[split_point:]
+    Y_validate = Y_total[0:split_point]
+    Y_train = Y_total[split_point:]
+
     for i in range(0, len(X_train), mini_batch_size):
         mini_batch_x = X_train[i: i + mini_batch_size].T
         mini_batch_y = Y_train[i: i + mini_batch_size].T
@@ -164,7 +206,7 @@ for i in range(10):
         #print(cost)
 
         da2 = (a2 - mini_batch_y)
-        dz2 = da2 * sigmoid_derivative(a2)
+        dz2 = da2 * sigmoid_derivative(z2)
         nabla_l2_b = (1/mini_batch_size) * np.sum(dz2, axis=1, keepdims=True)
         nabla_l2_w = (1/mini_batch_size) * np.dot(dz2, a1.T)
 
@@ -181,21 +223,23 @@ for i in range(10):
         l2_b = l2_b - learning_rate * nabla_l2_b
 
 # check out accuracy
-y = dfn[0]
-x = dfn[1]
+y = from_categorical(Y_validate)
+x = X_validate
 
 z1 = l1_w.dot(x.T) + l1_b
 a1 = relu(z1)
 z2 = l2_w.dot(a1) + l2_b
 a2 = sigmoid(z2)
 
+predictions = from_categorical(a2.T)
+
 count_correct = 0
 total = 0
 
-for i in range(len(X_train)):
-    predicted = np.where(a2.T[i]==np.amax(a2.T[i]))[0][0]
+for i in range(len(x)):
+    prediction = predictions[i]
     expected = y[i][0]
-    if predicted == expected:
+    if prediction == expected:
         count_correct += 1
     total += 1
 
