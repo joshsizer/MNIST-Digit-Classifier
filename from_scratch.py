@@ -51,6 +51,8 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 def sigmoid_derivative(x):
+    # Avoid overflow by limiting the range of X
+    x = np.clip(x, -500, 500)
     sig_x = sigmoid(x)
     return sig_x * (1-sig_x)
 
